@@ -1,0 +1,18 @@
+{
+  "name": "jp.lightgive.statecontroller",
+  "version": "1.0.0",
+  "displayName": "StateController",
+  "unity": "2021.3",
+  "unityRelease": "9f1",
+  "keywords": [
+    "keyword1",
+    "keyword2",
+    "keyword3"
+  ],
+  "author": {
+    "name": "LightGive",
+    "email": "roi.akase@outlook.jp",
+    "url": "https://github.com/LightGive"
+  },
+  "hideInEditor": false
+}
