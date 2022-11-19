@@ -9,8 +9,8 @@ namespace LightGive.StateController
 	{
 		protected T Controller;
 		public State(T controller) { Controller = controller; }
-		public abstract void OnStateEnter();
-		public abstract void OnStateUpdate();
-		public abstract void OnStateExit();
+		public virtual void OnStateEnter() { }
+		public virtual void OnStateUpdate() { }
+		public virtual void OnStateExit() { }
 	}
 }
