@@ -1,5 +1,5 @@
 {
-    "name": "LightGive.StateController.Runtime",
+    "name": "jp.lightgive.statecontroller.runtime",
     "rootNamespace": "",
     "references": [],
     "includePlatforms": [],
