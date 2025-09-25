@@ -1,5 +1,5 @@
 {
-    "name": "LightGive.StateController",
+    "name": "LightGive.StateController.Runtime",
     "rootNamespace": "",
     "references": [],
     "includePlatforms": [],
