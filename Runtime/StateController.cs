@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.Events;
 
 namespace LightGive.StateController.Runtime
 {
@@ -21,7 +19,7 @@ namespace LightGive.StateController.Runtime
 		/// <summary>
 		/// StateControllerが初期化済みかどうかのフラグ
 		/// </summary>
-		bool isInit = false;
+		bool _isInitialized = false;
 
 		/// <summary>
 		/// 登録されたステートオブジェクトを型別に管理する読み取り専用辞書
@@ -35,12 +33,18 @@ namespace LightGive.StateController.Runtime
 		public IState CurrentState => _currentState;
 
 		/// <summary>
+		/// 登録されている全てのステートを取得します
+		/// </summary>
+		/// <returns>登録されているIStateのコレクション。初期化前の場合はnull</returns>
+		public IEnumerable<IState> AllStates => _typeStateSets?.Values;
+
+		/// <summary>
 		/// MonoBehaviourの初期化処理
 		/// StateControllerの内部状態をリセットします
 		/// </summary>
 		void Awake()
 		{
-			isInit = false;
+			_isInitialized = false;
 			_currentState = null;
 		}
 
@@ -50,7 +54,7 @@ namespace LightGive.StateController.Runtime
 		/// </summary>
 		void Update()
 		{
-			if (isInit)
+			if (_isInitialized)
 			{
 				CurrentState?.StateUpdate();
 			}
@@ -63,15 +67,22 @@ namespace LightGive.StateController.Runtime
 		/// <param name="initialState">初期ステートとして設定するオブジェクト</param>
 		public void Initialize(IState[] states, IState initialState)
 		{
-			if (states == null ||
-				states.Length == 0 ||
-				initialState == null)
+			if (states == null || states.Length == 0)
 			{
+				Debug.LogWarning("ステート配列がnullまたは空です");
 				return;
 			}
 
-			var typeStateSets = new Dictionary<Type, IState>(states.Length);
-			foreach (var state in states)
+			if (initialState == null)
+			{
+				Debug.LogWarning("初期ステートがnullです");
+				return;
+			}
+
+			Dictionary<Type, IState> typeStateSets = new Dictionary<Type, IState>(states.Length);
+			bool initialStateFound = false;
+
+			foreach (IState state in states)
 			{
 				if (state == null)
 				{
@@ -79,28 +90,35 @@ namespace LightGive.StateController.Runtime
 					return;
 				}
 
-				var t = state.GetType();
-				if (typeStateSets.ContainsKey(t))
+				Type stateType = state.GetType();
+				if (typeStateSets.ContainsKey(stateType))
 				{
-					Debug.LogError($"既に登録されているステートクラスです{t.Name}");
+					Debug.LogError($"既に登録されているステートクラスです: {stateType.Name}");
 					return;
 				}
-				typeStateSets.Add(t, state);
+
+				typeStateSets.Add(stateType, state);
+
+				if (ReferenceEquals(state, initialState))
+				{
+					initialStateFound = true;
+				}
 			}
 
-			if (!typeStateSets.Values.Contains(initialState))
+			if (!initialStateFound)
 			{
-				Debug.LogWarning("初期ステートが存在しません");
+				Debug.LogWarning("初期ステートが登録されたステートの中に存在しません");
 				return;
 			}
 
-			_typeStateSets = new(typeStateSets);
-			foreach (var state in _typeStateSets.Values)
+			_typeStateSets = new ReadOnlyDictionary<Type, IState>(typeStateSets);
+
+			foreach (IState state in _typeStateSets.Values)
 			{
 				state.SetStateChangeCallback(OnStateChangeRequested);
 			}
 
-			isInit = true;
+			_isInitialized = true;
 			SetState(initialState);
 		}
 
@@ -111,21 +129,20 @@ namespace LightGive.StateController.Runtime
 		/// <returns>ステート遷移が成功した場合はtrue、失敗した場合はfalse</returns>
 		public bool SetState<T>() where T : IState
 		{
-			if (!isInit)
+			if (!_isInitialized)
 			{
+				Debug.LogWarning("StateControllerが初期化されていません");
 				return false;
 			}
 
-			if (_typeStateSets.TryGetValue(typeof(T), out var state))
+			if (_typeStateSets.TryGetValue(typeof(T), out IState state))
 			{
 				SetState(state);
 				return true;
 			}
-			else
-			{
-				Debug.LogWarning($"{typeof(T).Name}のステートが登録されていません");
-				return false;
-			}
+
+			Debug.LogWarning($"{typeof(T).Name}のステートが登録されていません");
+			return false;
 		}
 
 		/// <summary>
@@ -151,13 +168,13 @@ namespace LightGive.StateController.Runtime
 		/// <param name="stateType">遷移先のステート型</param>
 		void OnStateChangeRequested(Type stateType)
 		{
-			if (!isInit)
+			if (!_isInitialized)
 			{
 				Debug.LogWarning("StateControllerが初期化されていません");
 				return;
 			}
 
-			if (_typeStateSets.TryGetValue(stateType, out var state))
+			if (_typeStateSets.TryGetValue(stateType, out IState state))
 			{
 				SetState(state);
 			}
