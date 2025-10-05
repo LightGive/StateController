@@ -8,7 +8,7 @@ namespace LightGive.StateController.Runtime
 	/// ステートマシンの各ステートが実装する必要があるインターフェース
 	/// ステートの開始、更新、終了処理とコールバック設定機能を提供します
 	/// </summary>
-	public interface IState
+	public interface IState : IDisposable
 	{
 		/// <summary>
 		/// ステート遷移要求のコールバックを設定します
@@ -16,6 +16,11 @@ namespace LightGive.StateController.Runtime
 		/// </summary>
 		/// <param name="onStateChange">他のステートへの遷移要求を処理するコールバック</param>
 		void SetStateChangeCallback(UnityAction<Type> onStateChange);
+
+		/// <summary>
+		/// <see cref = "StateController" >StateController</see>の<see cref = "StateController.Initialize(IState[], IState)" >Initialize</see>タイミングで呼ばれる初期化処理
+		/// </summary>
+		void Initialize();
 
 		/// <summary>
 		/// ステートが開始されるときに呼び出されます

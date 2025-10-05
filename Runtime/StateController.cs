@@ -60,6 +60,14 @@ namespace LightGive.StateController.Runtime
 			}
 		}
 
+		protected virtual void OnDestroy()
+		{
+			foreach(var state in AllStates)
+			{
+				state.Dispose();
+			}
+		}
+
 		/// <summary>
 		/// StateControllerを初期化し、ステートオブジェクトを登録します
 		/// </summary>
@@ -103,6 +111,8 @@ namespace LightGive.StateController.Runtime
 				{
 					initialStateFound = true;
 				}
+
+				state.Initialize();
 			}
 
 			if (!initialStateFound)
