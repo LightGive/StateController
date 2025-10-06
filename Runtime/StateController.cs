@@ -62,7 +62,12 @@ namespace LightGive.StateController.Runtime
 
 		protected virtual void OnDestroy()
 		{
-			foreach(var state in AllStates)
+			if (!_isInitialized)
+			{
+				return;
+			}
+
+			foreach (var state in AllStates)
 			{
 				state.Dispose();
 			}
