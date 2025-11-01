@@ -161,6 +161,27 @@ namespace LightGive.StateController.Runtime
 		}
 
 		/// <summary>
+		/// 指定した型のステートに遷移します
+		/// </summary>
+		/// <param name="stateType">遷移先のステート型</param>
+		/// <returns>ステート遷移が成功した場合はtrue、失敗した場合はfalse</returns>
+		public bool SetState(Type stateType)
+		{
+			if (!_isInitialized)
+			{
+				Debug.LogWarning("StateControllerが初期化されていません");
+				return false;
+			}
+			if (_typeStateSets.TryGetValue(stateType, out IState state))
+			{
+				SetState(state);
+				return true;
+			}
+			Debug.LogWarning($"{stateType.Name}のステートが登録されていません");
+			return false;
+		}
+
+		/// <summary>
 		/// ステート遷移を実行します
 		/// 現在のステートのStateExitを呼び出し、新しいステートのStateEnterを呼び出します
 		/// </summary>
