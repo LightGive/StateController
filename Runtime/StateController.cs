@@ -138,6 +138,40 @@ namespace LightGive.StateController.Runtime
 		}
 
 		/// <summary>
+		/// StateControllerに登録されている指定した型のステートを取得します
+		/// </summary>
+		/// <typeparam name="T">取得したい型</typeparam>
+		/// <param name="state"></param>
+		/// <returns>指定の型のStateを取得出来た場合はtrue</returns>
+		public bool TryGetState<T>(out IState state) where T : IState
+		{
+			if (!_isInitialized)
+			{
+				Debug.LogWarning("StateControllerが初期化されていません");
+				state = null;
+				return false;
+			}
+			return _typeStateSets.TryGetValue(typeof(T), out state);
+		}
+
+		/// <summary>
+		/// StateControllerに登録されている指定した型のステートを取得します
+		/// </summary>
+		/// <param name="stateType">取得したいType型</param>
+		/// <param name="state"></param>
+		/// <returns>指定の型のStateを取得出来た場合はtrue</returns>
+		public bool TryGetState(Type stateType, out IState state)
+		{
+			if (!_isInitialized)
+			{
+				Debug.LogWarning("StateControllerが初期化されていません");
+				state = null;
+				return false;
+			}
+			return _typeStateSets.TryGetValue(stateType, out state);
+		}
+
+		/// <summary>
 		/// 指定した型のステートに遷移します
 		/// </summary>
 		/// <typeparam name="T">遷移先のステート型（IStateを継承している必要があります）</typeparam>
