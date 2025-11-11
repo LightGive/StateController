@@ -1,6 +1,5 @@
 ﻿
 using System;
-using UnityEngine.Events;
 
 namespace LightGive.StateController.Runtime
 {
@@ -10,13 +9,6 @@ namespace LightGive.StateController.Runtime
 	/// </summary>
 	public interface IState : IDisposable
 	{
-		/// <summary>
-		/// ステート遷移要求のコールバックを設定します
-		/// StateControllerのInitialize時に自動的に設定されます
-		/// </summary>
-		/// <param name="onStateChange">他のステートへの遷移要求を処理するコールバック</param>
-		void SetStateChangeCallback(UnityAction<Type> onStateChange);
-
 		/// <summary>
 		/// <see cref = "StateController" >StateController</see>の<see cref = "StateController.Initialize(IState[], IState)" >Initialize</see>タイミングで呼ばれる初期化処理
 		/// </summary>
