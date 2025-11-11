@@ -125,11 +125,6 @@ namespace LightGive.StateController.Runtime
 		/// <param name="state">遷移先のステートオブジェクト</param>
 		public bool SetState(IState state)
 		{
-			if(state == _currentState)
-			{
-				return false;
-			}
-
 			if (state == null)
 			{
 				return false;
