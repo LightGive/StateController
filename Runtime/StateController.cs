@@ -224,6 +224,11 @@ namespace LightGive.StateController.Runtime
 		/// <param name="state">遷移先のステートオブジェクト</param>
 		public bool SetState(IState state)
 		{
+			if (state == null)
+			{
+				return false;
+			}
+
 			if (!_isInitialized)
 			{
 				Debug.LogWarning("StateControllerが初期化されていません");
