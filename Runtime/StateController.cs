@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using UnityEngine;
 
 namespace LightGive.StateController.Runtime
@@ -134,7 +135,7 @@ namespace LightGive.StateController.Runtime
 			}
 
 			_isInitialized = true;
-			SetState(initialState);
+			SetStateImmediately(initialState);
 		}
 
 		/// <summary>
@@ -186,7 +187,7 @@ namespace LightGive.StateController.Runtime
 
 			if (_typeStateSets.TryGetValue(typeof(T), out IState state))
 			{
-				SetState(state);
+				SetStateImmediately(state);
 				return true;
 			}
 
@@ -206,9 +207,10 @@ namespace LightGive.StateController.Runtime
 				Debug.LogWarning("StateControllerが初期化されていません");
 				return false;
 			}
+
 			if (_typeStateSets.TryGetValue(stateType, out IState state))
 			{
-				SetState(state);
+				SetStateImmediately(state);
 				return true;
 			}
 			Debug.LogWarning($"{stateType.Name}のステートが登録されていません");
@@ -220,7 +222,27 @@ namespace LightGive.StateController.Runtime
 		/// 現在のステートのStateExitを呼び出し、新しいステートのStateEnterを呼び出します
 		/// </summary>
 		/// <param name="state">遷移先のステートオブジェクト</param>
-		void SetState(IState state)
+		public bool SetState(IState state)
+		{
+			if (!_isInitialized)
+			{
+				Debug.LogWarning("StateControllerが初期化されていません");
+				return false;
+			}
+
+			if (AllStates.Contains(state))
+			{
+				SetStateImmediately(state);
+				return true;
+			}
+			else
+			{
+				Debug.LogWarning($"{state}のステートが登録されていません");
+				return false;
+			}
+		}
+
+		void SetStateImmediately(IState state)
 		{
 			if (_currentState != null)
 			{
@@ -246,7 +268,7 @@ namespace LightGive.StateController.Runtime
 
 			if (_typeStateSets.TryGetValue(stateType, out IState state))
 			{
-				SetState(state);
+				SetStateImmediately(state);
 			}
 			else
 			{
