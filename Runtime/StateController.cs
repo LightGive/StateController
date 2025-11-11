@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 
 namespace LightGive.StateController.Runtime
 {
@@ -23,9 +24,9 @@ namespace LightGive.StateController.Runtime
 		bool _isInitialized = false;
 
 		/// <summary>
-		/// 登録されたステートオブジェクトを型別に管理する読み取り専用辞書
+		/// ステートのリスト
 		/// </summary>
-		ReadOnlyDictionary<Type, IState> _typeStateSets;
+		ReadOnlyCollection<IState> _stateList;
 
 		/// <summary>
 		/// 現在のステートを取得します
@@ -37,7 +38,9 @@ namespace LightGive.StateController.Runtime
 		/// 登録されている全てのステートを取得します
 		/// </summary>
 		/// <returns>登録されているIStateのコレクション。初期化前の場合はnull</returns>
-		public IEnumerable<IState> AllStates => _typeStateSets?.Values;
+		public IEnumerable<IState> AllStates => _stateList;
+
+		public UnityEvent<IState, IState> OnStateChangedEvt { get; private set; } = new();
 
 		/// <summary>
 		/// MonoBehaviourの初期化処理
@@ -83,138 +86,36 @@ namespace LightGive.StateController.Runtime
 		{
 			if (states == null || states.Length == 0)
 			{
-				Debug.LogWarning("ステート配列がnullまたは空です");
+				Debug.LogError("ステート配列がnullまたは空です");
 				return;
 			}
 
-			if (initialState == null)
+			if (states.Any(x => x == null))
 			{
-				Debug.LogWarning("初期ステートがnullです");
+				Debug.LogError("Nullのステートを登録する事は出来ません");
 				return;
 			}
 
-			Dictionary<Type, IState> typeStateSets = new Dictionary<Type, IState>(states.Length);
-			bool initialStateFound = false;
-
-			foreach (IState state in states)
+			if (states.Length != states.Distinct().Count())
 			{
-				if (state == null)
-				{
-					Debug.LogWarning("Nullのステートを登録する事は出来ません");
-					return;
-				}
+				Debug.LogError("重複してステートを登録することは出来ません");
+				return;
+			}
 
-				Type stateType = state.GetType();
-				if (typeStateSets.ContainsKey(stateType))
-				{
-					Debug.LogError($"既に登録されているステートクラスです: {stateType.Name}");
-					return;
-				}
+			if (!states.Contains(initialState))
+			{
+				Debug.LogError("初期ステートが登録されたステートの中に存在しません");
+				return;
+			}
 
-				typeStateSets.Add(stateType, state);
-
-				if (ReferenceEquals(state, initialState))
-				{
-					initialStateFound = true;
-				}
-
+			_stateList = new ReadOnlyCollection<IState>(states.ToList());
+			foreach (IState state in _stateList)
+			{
 				state.Initialize();
-			}
-
-			if (!initialStateFound)
-			{
-				Debug.LogWarning("初期ステートが登録されたステートの中に存在しません");
-				return;
-			}
-
-			_typeStateSets = new ReadOnlyDictionary<Type, IState>(typeStateSets);
-
-			foreach (IState state in _typeStateSets.Values)
-			{
-				state.SetStateChangeCallback(OnStateChangeRequested);
 			}
 
 			_isInitialized = true;
 			SetStateImmediately(initialState);
-		}
-
-		/// <summary>
-		/// StateControllerに登録されている指定した型のステートを取得します
-		/// </summary>
-		/// <typeparam name="T">取得したい型</typeparam>
-		/// <param name="state"></param>
-		/// <returns>指定の型のStateを取得出来た場合はtrue</returns>
-		public bool TryGetState<T>(out IState state) where T : IState
-		{
-			if (!_isInitialized)
-			{
-				Debug.LogWarning("StateControllerが初期化されていません");
-				state = null;
-				return false;
-			}
-			return _typeStateSets.TryGetValue(typeof(T), out state);
-		}
-
-		/// <summary>
-		/// StateControllerに登録されている指定した型のステートを取得します
-		/// </summary>
-		/// <param name="stateType">取得したいType型</param>
-		/// <param name="state"></param>
-		/// <returns>指定の型のStateを取得出来た場合はtrue</returns>
-		public bool TryGetState(Type stateType, out IState state)
-		{
-			if (!_isInitialized)
-			{
-				Debug.LogWarning("StateControllerが初期化されていません");
-				state = null;
-				return false;
-			}
-			return _typeStateSets.TryGetValue(stateType, out state);
-		}
-
-		/// <summary>
-		/// 指定した型のステートに遷移します
-		/// </summary>
-		/// <typeparam name="T">遷移先のステート型（IStateを継承している必要があります）</typeparam>
-		/// <returns>ステート遷移が成功した場合はtrue、失敗した場合はfalse</returns>
-		public bool SetState<T>() where T : IState
-		{
-			if (!_isInitialized)
-			{
-				Debug.LogWarning("StateControllerが初期化されていません");
-				return false;
-			}
-
-			if (_typeStateSets.TryGetValue(typeof(T), out IState state))
-			{
-				SetStateImmediately(state);
-				return true;
-			}
-
-			Debug.LogWarning($"{typeof(T).Name}のステートが登録されていません");
-			return false;
-		}
-
-		/// <summary>
-		/// 指定した型のステートに遷移します
-		/// </summary>
-		/// <param name="stateType">遷移先のステート型</param>
-		/// <returns>ステート遷移が成功した場合はtrue、失敗した場合はfalse</returns>
-		public bool SetState(Type stateType)
-		{
-			if (!_isInitialized)
-			{
-				Debug.LogWarning("StateControllerが初期化されていません");
-				return false;
-			}
-
-			if (_typeStateSets.TryGetValue(stateType, out IState state))
-			{
-				SetStateImmediately(state);
-				return true;
-			}
-			Debug.LogWarning($"{stateType.Name}のステートが登録されていません");
-			return false;
 		}
 
 		/// <summary>
@@ -224,6 +125,11 @@ namespace LightGive.StateController.Runtime
 		/// <param name="state">遷移先のステートオブジェクト</param>
 		public bool SetState(IState state)
 		{
+			if(state == _currentState)
+			{
+				return false;
+			}
+
 			if (state == null)
 			{
 				return false;
@@ -254,31 +160,10 @@ namespace LightGive.StateController.Runtime
 				_currentState.StateExit();
 			}
 
+			var preState = _currentState;
 			_currentState = state;
 			_currentState.StateEnter();
-		}
-
-		/// <summary>
-		/// ステートからの遷移要求を処理するコールバックメソッド
-		/// StateBaseクラスのChangeStateメソッドから呼び出されます
-		/// </summary>
-		/// <param name="stateType">遷移先のステート型</param>
-		void OnStateChangeRequested(Type stateType)
-		{
-			if (!_isInitialized)
-			{
-				Debug.LogWarning("StateControllerが初期化されていません");
-				return;
-			}
-
-			if (_typeStateSets.TryGetValue(stateType, out IState state))
-			{
-				SetStateImmediately(state);
-			}
-			else
-			{
-				Debug.LogWarning($"{stateType.Name}のステートが登録されていません");
-			}
+			OnStateChangedEvt.Invoke(preState, _currentState);
 		}
 
 		/// <summary>
